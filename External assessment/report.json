@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "tool": "SecScan",
+    "version": "1.0.0",
+    "target": "202.74.203.248",
+    "timestamp": "2026-05-03T23:30:44.863864Z"
+  },
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 2,
+      "medium": 1,
+      "low": 0,
+      "info": 1,
+      "pass": 0
+    },
+    "risk_score": 12,
+    "total_findings": 4
+  },
+  "modules": {
+    "http_headers": {
+      "target": "https://202.74.203.248",
+      "findings": [],
+      "raw_headers": {},
+      "error": "<urlopen error timed out>"
+    },
+    "tls": {
+      "target": "202.74.203.248:443",
+      "findings": [],
+      "error": "timed out"
+    },
+    "email_security": {
+      "domain": "202.74.203.248",
+      "spf": {
+        "record": null,
+        "findings": [
+          {
+            "type": "spf_missing",
+            "severity": "high",
+            "message": "No SPF record found",
+            "remediation": "Add TXT record: 202.74.203.248 \"v=spf1 ... -all\""
+          }
+        ]
+      },
+      "dkim": {
+        "selector": "default",
+        "record": null,
+        "findings": [
+          {
+            "type": "dkim_missing",
+            "severity": "medium",
+            "message": "No DKIM record found for selector 'default'",
+            "remediation": "Add DKIM TXT record at default._domainkey.202.74.203.248"
+          }
+        ]
+      },
+      "dmarc": {
+        "record": null,
+        "findings": [
+          {
+            "type": "dmarc_missing",
+            "severity": "high",
+            "message": "No DMARC record found",
+            "remediation": "Add TXT at _dmarc.202.74.203.248: \"v=DMARC1; p=reject; rua=mailto:dmarc@202.74.203.248\""
+          }
+        ]
+      }
+    },
+    "sri": {
+      "target": "https://202.74.203.248",
+      "findings": [],
+      "scripts": [],
+      "links": [],
+      "error": "<urlopen error timed out>"
+    },
+    "ports": {
+      "target": "202.74.203.248",
+      "command": "nmap -sV --open -T4 202.74.203.248",
+      "ports": [
+        {
+          "port": 541,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "reverse-ssl",
+          "version": "SSL/TLS ClientHello"
+        }
+      ],
+      "findings": [
+        {
+          "type": "open_port",
+          "port": 541,
+          "service": "reverse-ssl",
+          "version": "SSL/TLS ClientHello",
+          "severity": "info",
+          "message": "Open: 541/tcp \u2014 reverse-ssl (SSL/TLS ClientHello)"
+        }
+      ],
+      "latency": "0.0055s"
+    },
+    "directories": {
+      "target": "https://202.74.203.248",
+      "tool": "dirsearch",
+      "wordlist": "/usr/share/wordlists/dirb/common.txt",
+      "findings": [],
+      "paths": []
+    },
+    "subdomains": {
+      "target": "202.74.203.248",
+      "tool": "subfinder",
+      "subdomains": [],
+      "findings": []
+    }
+  }
+}
