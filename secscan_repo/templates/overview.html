@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %} — Overview{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+  <div>
+    <h1>Scan Overview</h1>
+    <p style="margin-top:4px;">{{ file_name }} &nbsp;·&nbsp;
+      <span class="inline-code">{{ db_type.upper() }}</span>
+    </p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="{{ url_for('download_report', fmt='json') }}" class="btn">↓ JSON</a>
+    <a href="{{ url_for('download_report', fmt='html') }}" class="btn btn-green">↓ HTML Report</a>
+    <a href="{{ url_for('tables') }}" class="btn btn-primary">Test Injection →</a>
+  </div>
+</div>
+
+<!-- Summary metrics -->
+<div class="grid-4" style="margin-bottom:24px;">
+  <div class="metric-card">
+    <div class="num" style="color:{% if high|length > 0 %}var(--accent){% else %}var(--green){% endif %}">
+      {{ high|length }}
+    </div>
+    <div class="lbl">HIGH findings</div>
+  </div>
+  <div class="metric-card">
+    <div class="num" style="color:{% if medium|length > 0 %}var(--yellow){% else %}var(--green){% endif %}">
+      {{ medium|length }}
+    </div>
+    <div class="lbl">MEDIUM findings</div>
+  </div>
+  <div class="metric-card">
+    <div class="num" style="color:var(--green)">
+      {{ parsed_data.safe_columns.values()|sum(start=[]) | list | length }}
+    </div>
+    <div class="lbl">Safe columns</div>
+  </div>
+  <div class="metric-card">
+    <div class="num">{{ tables|length }}</div>
+    <div class="lbl">Tables detected</div>
+  </div>
+</div>
+
+<!-- Findings -->
+<h2>Static Analysis Findings</h2>
+
+{% if findings %}
+  {% for f in findings %}
+  <div class="card" style="border-left: 3px solid
+    {% if f.severity == 'HIGH' %}var(--accent)
+    {% elif f.severity == 'MEDIUM' %}var(--yellow)
+    {% else %}var(--blue){% endif %};
+    border-radius: 0 8px 8px 0;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span class="badge badge-{{ f.severity | lower }}">{{ f.severity }}</span>
+      <strong>{{ f.vuln_type | replace('_', ' ') | title }}</strong>
+      <span style="flex:1"></span>
+      <span style="font-size:11px;color:var(--muted);">Line {{ f.line_number }}</span>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:var(--muted);">
+      <span>Table: <span class="inline-code">{{ f.table }}</span></span>
+      {% if f.column %}<span>Column: <span class="inline-code">{{ f.column }}</span></span>{% endif %}
+      <span>File: {{ f.file_name }}</span>
+    </div>
+
+    <p style="font-size:13px;margin-bottom:10px;color:var(--text);">{{ f.description }}</p>
+
+    <pre style="margin-bottom:10px;">{{ f.code_snippet }}</pre>
+
+    <div style="font-size:12px;padding:8px 12px;background:rgba(63,185,80,.08);
+                border:1px solid rgba(63,185,80,.2);border-radius:4px;color:#3fb950;">
+      <strong>Fix:</strong> {{ f.recommendation }}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="alert alert-success">
+    ✓ No static vulnerabilities detected. No string concatenation or missing parameterization found.
+  </div>
+{% endif %}
+
+<!-- Schema summary -->
+<h2>Detected Schema</h2>
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>Table</th>
+        <th>Columns</th>
+        <th>Safe columns</th>
+        <th>Vulnerable columns</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for table in tables %}
+    {% set cols = parsed_data.columns[table] %}
+    {% set safe = parsed_data.safe_columns.get(table, []) %}
+    {% set vuln = parsed_data.vulnerable_columns.get(table, []) %}
+    <tr>
+      <td><span class="inline-code">{{ table }}</span></td>
+      <td>{{ cols | join(', ') }}</td>
+      <td>
+        {% for c in safe %}<span class="tag tag-safe">{{ c }}</span> {% endfor %}
+        {% if not safe %}<span style="color:var(--muted)">—</span>{% endif %}
+      </td>
+      <td>
+        {% for c in vuln %}<span class="tag tag-vuln">{{ c }}</span> {% endfor %}
+        {% if not vuln %}<span style="color:var(--muted)">—</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Joins -->
+{% if parsed_data.joins %}
+<h2>Detected Joins / FK Relationships</h2>
+<div class="card" style="padding:0;overflow:hidden;">
+  <table>
+    <thead><tr><th>Left table</th><th>Left col</th><th></th><th>Right table</th><th>Right col</th></tr></thead>
+    <tbody>
+    {% for j in parsed_data.joins %}
+    <tr>
+      <td><span class="inline-code">{{ j[0] }}</span></td>
+      <td><span class="tag">{{ j[1] }}</span></td>
+      <td style="text-align:center;color:var(--muted);">→</td>
+      <td><span class="inline-code">{{ j[2] }}</span></td>
+      <td><span class="tag">{{ j[3] }}</span></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

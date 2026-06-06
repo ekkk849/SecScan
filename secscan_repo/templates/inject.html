@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %} — Inject: {{ table }}{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+  <div>
+    <h1>Injection Test</h1>
+    <p>Table: <span class="inline-code">{{ table }}</span> &nbsp;·&nbsp;
+       DB: <span class="inline-code">{{ db_type }}</span></p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="{{ url_for('tables') }}" class="btn">← Change table</a>
+    <button onclick="runAll()" class="btn btn-primary" id="run-all-btn">⚡ Scan all columns</button>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:20px;align-items:start;">
+
+  <!-- Left: form -->
+  <div>
+    {% if original_sql %}
+    <h3>Original SQL block</h3>
+    <pre style="margin-bottom:20px;font-size:11px;max-height:160px;overflow:auto;">{{ original_sql }}</pre>
+    {% endif %}
+
+    <div class="card">
+      <h3 style="margin-bottom:16px;">Configure attack</h3>
+      <form method="POST" id="inject-form">
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;">TARGET COLUMN</label>
+          <select name="column" id="col-select" onchange="updateColumnStatus(this.value)">
+            {% for col, ctype in columns.items() %}
+            <option value="{{ col }}"
+              data-safe="{{ col in safe_cols }}"
+              data-vuln="{{ col in vuln_cols }}"
+              data-type="{{ ctype }}"
+              {% if request.form.get('column') == col %}selected{% endif %}>
+              {{ col }} ({{ ctype }})
+              {% if col in safe_cols %} ✓ safe{% elif col in vuln_cols %} ⚠ vulnerable{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+
+          <div id="col-status" style="margin-top:8px;font-size:12px;display:none;padding:6px 10px;border-radius:4px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;">ATTACK TYPE</label>
+          <select name="attack">
+            {% for atk in available_attacks %}
+            <option value="{{ atk.value }}"
+              {% if request.form.get('attack') == atk.value %}selected{% endif %}>
+              {{ atk.label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-warn" style="margin-bottom:12px;">{{ error }}</div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;">
+          Generate &amp; Execute →
+        </button>
+      </form>
+    </div>
+
+    <!-- Column map -->
+    <h3 style="margin-top:20px;margin-bottom:10px;">Column safety map</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      {% for col in columns %}
+        {% if col in safe_cols %}
+          <span class="tag tag-safe">{{ col }}</span>
+        {% elif col in vuln_cols %}
+          <span class="tag tag-vuln">{{ col }}</span>
+        {% else %}
+          <span class="tag">{{ col }}</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted);">
+      <span class="tag tag-vuln">red</span> = static vuln detected &nbsp;
+      <span class="tag tag-safe">green</span> = parameterized (safe) &nbsp;
+      <span class="tag">gray</span> = unknown
+    </div>
+  </div>
+
+  <!-- Right: results -->
+  <div>
+    {% if payload %}
+    <h3>Generated payload</h3>
+    <pre style="margin-bottom:16px;color:#f97316;">{{ payload }}</pre>
+    {% endif %}
+
+    {% if query_executed %}
+    <h3>Query executed</h3>
+    <pre style="margin-bottom:16px;font-size:11px;">{{ query_executed }}</pre>
+    {% endif %}
+
+    {% if column_status %}
+    <div class="alert alert-{{ 'danger' if column_status == 'vulnerable' else 'success' if column_status == 'safe' else 'info' }}"
+         style="margin-bottom:16px;">
+      {% if column_status == 'vulnerable' %}
+        ⚠ Column flagged as vulnerable by static analysis (string concatenation detected)
+      {% elif column_status == 'safe' %}
+        ✓ Column uses parameterized queries — shown for reference only
+      {% else %}
+        ℹ Column safety unknown — no static analysis evidence found
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if result %}
+      {% if result.error %}
+        <div class="alert alert-warn">
+          <strong>Execution error:</strong> {{ result.error }}
+        </div>
+      {% elif result.count == 0 %}
+        <div class="alert alert-info">No rows returned — payload may not have worked.</div>
+      {% else %}
+        <div class="alert alert-danger">
+          ⚠ <strong>{{ result.count }} row(s) returned!</strong> Injection successful.
+        </div>
+
+        <div class="card" style="padding:0;overflow:auto;max-height:320px;">
+          <table>
+            <thead>
+              <tr>
+                {% for col_name in result.columns %}
+                <th>{{ col_name }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in result.rows[:50] %}
+              <tr>
+                {% for cell in row %}
+                <td style="font-family:var(--mono);font-size:12px;">{{ cell }}</td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+              {% if result.count > 50 %}
+              <tr>
+                <td colspan="{{ result.columns|length }}" style="text-align:center;color:var(--muted);">
+                  ... {{ result.count - 50 }} more rows ...
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="card" style="text-align:center;padding:40px;border-style:dashed;">
+        <div style="font-size:32px;margin-bottom:8px;">🎯</div>
+        <div style="color:var(--muted);font-size:13px;">Configure an attack on the left and execute to see results here.</div>
+      </div>
+    {% endif %}
+
+    <!-- Scan-all results panel (filled by JS) -->
+    <div id="scan-all-panel" style="display:none;margin-top:20px;">
+      <h3 style="margin-bottom:10px;">Full scan results</h3>
+      <div id="scan-all-results"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const safeData = {{ safe_cols | list | tojson }};
+const vulnData = {{ vuln_cols | list | tojson }};
+
+function updateColumnStatus(col) {
+  const el = document.getElementById('col-status');
+  const opt = document.querySelector(`#col-select option[value="${col}"]`);
+  const isSafe = opt && opt.dataset.safe === 'True';
+  const isVuln = opt && opt.dataset.vuln === 'True';
+
+  if (isSafe) {
+    el.style.display = 'block';
+    el.style.background = 'rgba(63,185,80,.1)';
+    el.style.color = '#3fb950';
+    el.style.border = '1px solid rgba(63,185,80,.3)';
+    el.textContent = '✓ Parameterized queries detected — this column is likely safe.';
+  } else if (isVuln) {
+    el.style.display = 'block';
+    el.style.background = 'rgba(248,81,73,.1)';
+    el.style.color = '#f85149';
+    el.style.border = '1px solid rgba(248,81,73,.3)';
+    el.textContent = '⚠ String concatenation detected in source — this column is vulnerable.';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// init on load
+updateColumnStatus(document.getElementById('col-select').value);
+
+async function runAll() {
+  const btn = document.getElementById('run-all-btn');
+  btn.textContent = '⏳ Scanning...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/scan-all', { method: 'POST' });
+    const data = await res.json();
+
+    if (data.error) {
+      alert('Scan error: ' + data.error);
+      return;
+    }
+
+    const panel = document.getElementById('scan-all-panel');
+    const results = document.getElementById('scan-all-results');
+    panel.style.display = 'block';
+
+    const successes = data.results.filter(r => r.rows_returned > 0);
+    const errors    = data.results.filter(r => r.error);
+
+    let html = `<div class="alert ${successes.length > 0 ? 'alert-danger' : 'alert-success'}" style="margin-bottom:12px;">
+      ${successes.length > 0
+        ? `⚠ ${successes.length} injection(s) returned data out of ${data.total} tests`
+        : `✓ All ${data.total} payloads returned no data`}
+    </div>`;
+
+    if (successes.length > 0) {
+      html += '<div class="card" style="padding:0;overflow:auto;max-height:300px;"><table>';
+      html += '<thead><tr><th>Table</th><th>Column</th><th>Attack</th><th>Rows</th><th>Payload</th></tr></thead><tbody>';
+      for (const r of successes) {
+        html += `<tr>
+          <td><span class="inline-code">${r.table}</span></td>
+          <td><span class="inline-code">${r.column}</span></td>
+          <td><span class="badge badge-high">${r.attack}</span></td>
+          <td style="color:var(--accent);font-weight:700;">${r.rows_returned}</td>
+          <td><code style="font-size:11px;">${r.payload}</code></td>
+        </tr>`;
+      }
+      html += '</tbody></table></div>';
+    }
+
+    results.innerHTML = html;
+  } catch(e) {
+    alert('Network error: ' + e.message);
+  } finally {
+    btn.textContent = '⚡ Scan all columns';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

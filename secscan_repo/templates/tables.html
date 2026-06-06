@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %} — Select Table{% endblock %}
+
+{% block content %}
+<h1>Select Target Table</h1>
+<p style="margin-bottom:24px;">Choose a table to run injection tests against.</p>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div style="max-width:520px;">
+  <form method="POST">
+    <div class="card">
+      <h3 style="margin-bottom:16px;">Available tables</h3>
+
+      {% for table in parsed_data.columns %}
+      {% set cols = parsed_data.columns[table] %}
+      {% set vuln = parsed_data.vulnerable_columns.get(table, []) %}
+      {% set safe = parsed_data.safe_columns.get(table, []) %}
+      <label style="display:block;margin-bottom:8px;cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;
+                    border:1px solid var(--border);border-radius:6px;
+                    transition:border-color .15s;background:var(--surface2);"
+             onmouseover="this.style.borderColor='var(--blue)'"
+             onmouseout="this.style.borderColor='var(--border)'">
+          <input type="radio" name="table" value="{{ table }}"
+                 style="width:auto;accent-color:var(--accent);">
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:13px;">{{ table }}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+              {{ cols | length }} columns:
+              {{ cols | join(', ') | truncate(60) }}
+            </div>
+          </div>
+          {% if vuln %}
+            <span class="badge badge-high">{{ vuln | length }} vuln</span>
+          {% elif safe %}
+            <span class="badge badge-ok">safe</span>
+          {% else %}
+            <span class="badge badge-info">unknown</span>
+          {% endif %}
+        </div>
+      </label>
+      {% endfor %}
+
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:12px;padding:10px;">
+        Run injection tests →
+      </button>
+    </div>
+  </form>
+
+  <a href="{{ url_for('overview') }}" style="color:var(--muted);font-size:13px;">← Back to overview</a>
+</div>
+{% endblock %}

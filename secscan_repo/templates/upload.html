@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %} — Upload{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:60px auto;text-align:center;">
+  <div style="font-size:48px;margin-bottom:16px;">🔍</div>
+  <h1 style="font-size:28px;margin-bottom:8px;">SecScan</h1>
+  <p style="margin-bottom:32px;">Upload a C# source file to detect SQL injection vulnerabilities<br>and simulate attack payloads on a live database.</p>
+
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <div class="card" style="text-align:left;">
+    <form method="POST" enctype="multipart/form-data">
+      <h3 style="margin-bottom:4px;">Upload source file</h3>
+      <p style="font-size:12px;margin-bottom:16px;">Accepts .cs, .sql, .txt files containing SQL queries via SqlCommand</p>
+
+      <div style="border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;
+                  margin-bottom:16px;cursor:pointer;transition:border-color .15s;"
+           id="drop-zone">
+        <div style="font-size:24px;margin-bottom:8px;">📄</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:12px;">Drag and drop or click to browse</div>
+        <input type="file" name="file" id="file-input" accept=".cs,.sql,.txt"
+               style="display:none;" onchange="showFile(this)">
+        <label for="file-input" class="btn" style="cursor:pointer;">Choose file</label>
+        <div id="file-name" style="margin-top:10px;font-size:12px;color:var(--muted);"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;">
+        Analyse file →
+      </button>
+    </form>
+  </div>
+
+  <div style="margin-top:24px;">
+    <p style="font-size:12px;margin-bottom:12px;color:var(--muted);">What SecScan detects:</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <span class="badge badge-high">String concatenation</span>
+      <span class="badge badge-medium">Missing parameterization</span>
+      <span class="badge badge-info">Schema extraction</span>
+      <span class="badge badge-ok">Safe column detection</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function showFile(input) {
+  const name = input.files[0]?.name || '';
+  document.getElementById('file-name').textContent = name ? '📄 ' + name : '';
+}
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--accent)'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--border)'; });
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.style.borderColor = 'var(--border)';
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const input = document.getElementById('file-input');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    showFile(input);
+  }
+});
+</script>
+{% endblock %}

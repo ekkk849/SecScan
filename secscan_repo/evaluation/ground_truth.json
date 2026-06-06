@@ -1,0 +1,247 @@
+{
+  "corpus_version": "2.0",
+  "total_files": 20,
+  "files": [
+    {
+      "file": "vuln_01_concat_healthcare.cs",      "category": "clearly_vulnerable",
+      "total_methods": 4, "vulnerable": 4, "safe": 0,
+      "vuln_types": ["string_concat"],
+      "methods": [
+        {"name":"SearchPatients",      "status":"VULNERABLE","type":"string_concat","inject_params":["searchTerm","ward"]},
+        {"name":"GetPatientsByDoctor", "status":"VULNERABLE","type":"string_concat","inject_params":["doctorId","status"]},
+        {"name":"GetAdmissionReport",  "status":"VULNERABLE","type":"string_concat","inject_params":["startDate","endDate","wardName"]},
+        {"name":"SearchPrescriptions", "status":"VULNERABLE","type":"string_concat","inject_params":["medicationName","patientLastName"]}
+      ]
+    },
+    {
+      "file": "vuln_02_interpolation_banking.cs",   "category": "clearly_vulnerable",
+      "total_methods": 3, "vulnerable": 3, "safe": 0,
+      "vuln_types": ["interpolated_sql"],
+      "methods": [
+        {"name":"GetTransactionHistory",  "status":"VULNERABLE","type":"interpolated_sql","inject_params":["accountNumber","transactionType","fromDate","toDate"]},
+        {"name":"GetCustomerAccounts",    "status":"VULNERABLE","type":"interpolated_sql","inject_params":["customerId","branchCode"]},
+        {"name":"SearchAccountsByStatus", "status":"VULNERABLE","type":"interpolated_sql","inject_params":["status","accountType","branchCode"]}
+      ]
+    },
+    {
+      "file": "vuln_03_format_orderby_hr.cs",       "category": "clearly_vulnerable",
+      "total_methods": 4, "vulnerable": 4, "safe": 0,
+      "vuln_types": ["string_concat","string_format","orderby_injection"],
+      "methods": [
+        {"name":"SearchEmployees",    "status":"VULNERABLE","type":"string_format","inject_params":["department","jobTitle","status"]},
+        {"name":"GetPayrollReport",   "status":"VULNERABLE","type":"string_format","inject_params":["startDate","endDate","department"]},
+        {"name":"GetEmployeesSorted", "status":"VULNERABLE","type":"orderby_injection","inject_params":["sortColumn","sortDir"]},
+        {"name":"GetLeaveRequests",   "status":"VULNERABLE","type":"orderby_injection","inject_params":["employeeId","leaveType","sortField"]}
+      ]
+    },
+    {
+      "file": "vuln_04_integer_injection.cs",       "category": "clearly_vulnerable",
+      "total_methods": 4, "vulnerable": 4, "safe": 0,
+      "vuln_types": ["string_concat","orderby_injection"],
+      "notes": "Integer params passed as strings — no quote chars in payload",
+      "methods": [
+        {"name":"GetStockByWarehouse", "status":"VULNERABLE","type":"string_concat","inject_params":["warehouseId","categoryId"]},
+        {"name":"GetLowStockItems",    "status":"VULNERABLE","type":"string_concat","inject_params":["supplierId","minQuantity"]},
+        {"name":"GetStockMovements",   "status":"VULNERABLE","type":"string_concat","inject_params":["itemId","warehouseId","movementType"]},
+        {"name":"GetInventoryReport",  "status":"VULNERABLE","type":"orderby_injection","inject_params":["warehouseId","sortColumn","sortDir"]}
+      ]
+    },
+    {
+      "file": "vuln_05_like_injection.cs",          "category": "clearly_vulnerable",
+      "total_methods": 3, "vulnerable": 3, "safe": 0,
+      "vuln_types": ["string_concat"],
+      "notes": "All injections via LIKE '%' + userInput + '%' pattern",
+      "methods": [
+        {"name":"SearchJobs",       "status":"VULNERABLE","type":"string_concat","inject_params":["jobTitle","skills","location"]},
+        {"name":"SearchCandidates", "status":"VULNERABLE","type":"string_concat","inject_params":["candidateName","skills","education"]},
+        {"name":"SearchCompanies",  "status":"VULNERABLE","type":"string_concat","inject_params":["companyName","industry","location"]}
+      ]
+    },
+    {
+      "file": "safe_01_ecommerce_params.cs",         "category": "clearly_safe",
+      "total_methods": 5, "vulnerable": 0, "safe": 5,
+      "notes": "All AddWithValue. Expected 0 findings.",
+      "methods": [
+        {"name":"SearchProducts",      "status":"SAFE"},
+        {"name":"GetOrdersByCustomer", "status":"SAFE"},
+        {"name":"CreateOrder",         "status":"SAFE"},
+        {"name":"UpdateProductStock",  "status":"SAFE"},
+        {"name":"GetProductReviews",   "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "safe_02_hospital_transactions.cs",    "category": "clearly_safe",
+      "total_methods": 4, "vulnerable": 0, "safe": 4,
+      "notes": "Transactions and SqlParameter objects. Expected 0 findings.",
+      "methods": [
+        {"name":"AdmitPatient",     "status":"SAFE"},
+        {"name":"GetWardCapacity",  "status":"SAFE"},
+        {"name":"DischargePatient", "status":"SAFE"},
+        {"name":"GetDoctorSchedule","status":"SAFE"}
+      ]
+    },
+    {
+      "file": "safe_03_stored_procedures.cs",        "category": "clearly_safe",
+      "total_methods": 4, "vulnerable": 0, "safe": 4,
+      "notes": "CommandType.StoredProcedure style. Expected 0 findings.",
+      "methods": [
+        {"name":"GetInvoicesByClient", "status":"SAFE"},
+        {"name":"GetGeneralLedger",    "status":"SAFE"},
+        {"name":"GetAccountBalance",   "status":"SAFE"},
+        {"name":"PostJournalEntry",    "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "safe_04_sqlparameter_array.cs",       "category": "clearly_safe",
+      "total_methods": 4, "vulnerable": 0, "safe": 4,
+      "notes": "SqlParameter[] AddRange style. Expected 0 findings.",
+      "methods": [
+        {"name":"GetStudentTranscript",  "status":"SAFE"},
+        {"name":"GetCourseEnrollments",  "status":"SAFE"},
+        {"name":"EnrollStudent",         "status":"SAFE"},
+        {"name":"UpdateGrade",           "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "mixed_01_school_highvuln.cs",         "category": "mixed",
+      "total_methods": 5, "vulnerable": 4, "safe": 1,
+      "vuln_types": ["string_concat","interpolated_sql","string_format"],
+      "methods": [
+        {"name":"SearchStudents",     "status":"VULNERABLE","type":"string_concat",   "inject_params":["studentName","grade","status"]},
+        {"name":"GetClassesByTeacher","status":"VULNERABLE","type":"string_concat",   "inject_params":["teacherId","subject"]},
+        {"name":"GetExamResults",     "status":"VULNERABLE","type":"string_format",   "inject_params":["term","year","subject"]},
+        {"name":"GetAttendanceReport","status":"VULNERABLE","type":"interpolated_sql","inject_params":["classId","month","year"]},
+        {"name":"GetStudentFees",     "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "mixed_02_hotel_balanced.cs",          "category": "mixed",
+      "total_methods": 6, "vulnerable": 3, "safe": 3,
+      "methods": [
+        {"name":"SearchGuests",           "status":"VULNERABLE","type":"string_concat",   "inject_params":["guestName","nationality","status"]},
+        {"name":"CheckRoomAvailability",  "status":"SAFE"},
+        {"name":"GetBookingsByDateRange", "status":"VULNERABLE","type":"interpolated_sql","inject_params":["checkIn","checkOut","roomType"]},
+        {"name":"CreateBooking",          "status":"SAFE"},
+        {"name":"GetRevenueReport",       "status":"VULNERABLE","type":"string_format",   "inject_params":["startDate","endDate","roomType"]},
+        {"name":"UpdateGuestProfile",     "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "mixed_03_library_lowvuln.cs",         "category": "mixed",
+      "total_methods": 5, "vulnerable": 1, "safe": 4,
+      "notes": "One needle in mostly safe code",
+      "methods": [
+        {"name":"SearchBooks",     "status":"VULNERABLE","type":"string_concat","inject_params":["title","author","genre"]},
+        {"name":"GetMemberLoans",  "status":"SAFE"},
+        {"name":"ReserveBook",     "status":"SAFE"},
+        {"name":"ReturnBook",      "status":"SAFE"},
+        {"name":"GetOverdueLoans", "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "mixed_04_column_level.cs",            "category": "mixed",
+      "total_methods": 5, "vulnerable": 3, "safe": 2,
+      "notes": "SearchDrugs: same method has @CategoryId (safe) AND concat on ProductName/Manufacturer (vulnerable)",
+      "methods": [
+        {"name":"SearchDrugs",          "status":"VULNERABLE","type":"string_concat","inject_params":["productName","manufacturer"],"safe_params":["categoryId"]},
+        {"name":"GetSupplierStock",     "status":"SAFE"},
+        {"name":"GetExpiringBatches",   "status":"VULNERABLE","type":"string_concat","inject_params":["batchNumber","expiryBefore","warehouseId"]},
+        {"name":"GetShipmentReport",    "status":"VULNERABLE","type":"string_format","inject_params":["startDate","endDate","supplierId"]},
+        {"name":"GetComplianceAudit",   "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "mixed_05_nested_alias.cs",            "category": "mixed",
+      "total_methods": 6, "vulnerable": 3, "safe": 3,
+      "notes": "Alias 'p' and 'u' reused across methods for different tables — tests v2 scoping",
+      "methods": [
+        {"name":"SearchTenants",        "status":"VULNERABLE","type":"string_concat",   "inject_params":["tenantName","propertyRef","status"]},
+        {"name":"GetMaintenanceRequests","status":"SAFE"},
+        {"name":"GetRentArrearsReport", "status":"VULNERABLE","type":"interpolated_sql","inject_params":["tenantId","rentFromDate","rentToDate"]},
+        {"name":"GetLeaseAgreement",    "status":"SAFE"},
+        {"name":"GetOccupancyReport",   "status":"VULNERABLE","type":"string_format",   "inject_params":["regionCode","startDate","endDate"]},
+        {"name":"GetPropertyInspections","status":"SAFE"}
+      ]
+    },
+    {
+      "file": "edge_01_multiline_literal_fp.cs",     "category": "edge_case",
+      "total_methods": 5, "vulnerable": 2, "safe": 3,
+      "notes": "GetPolicyDetails EXPECTED to produce FP (multi-line literal concat). ClaimStatus conflict across SearchClaims (vuln) and GetClaimById (safe).",
+      "methods": [
+        {"name":"GetPolicyDetails",       "status":"SAFE",       "edge":"EXPECTED_FP multiline literal"},
+        {"name":"SearchClaims",           "status":"VULNERABLE", "type":"string_concat","inject_params":["claimStatus","assessorId","claimType"],"edge":"ClaimStatus also in safe method"},
+        {"name":"GetClaimById",           "status":"SAFE",       "edge":"ClaimStatus conflict safe side"},
+        {"name":"GetClaimsReport",        "status":"VULNERABLE", "type":"string_format","inject_params":["startDate","endDate","region","claimType"]},
+        {"name":"GetAssessorPerformance", "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "edge_02_stringbuilder_blindspot.cs",  "category": "edge_case",
+      "total_methods": 5, "vulnerable": 3, "safe": 2,
+      "notes": "2 of 3 vuln methods use StringBuilder — EXPECTED FN (tool blind spot). FilterProperties_Concat is control.",
+      "methods": [
+        {"name":"SearchPropertiesByBuilder","status":"VULNERABLE","type":"stringbuilder_concat","edge":"EXPECTED_FN tool blind spot"},
+        {"name":"GetAgentListings_Builder", "status":"VULNERABLE","type":"stringbuilder_concat","edge":"EXPECTED_FN tool blind spot"},
+        {"name":"FilterProperties_Concat",  "status":"VULNERABLE","type":"string_concat","inject_params":["minPrice","maxPrice","propertyType","city"]},
+        {"name":"GetPropertyById",          "status":"SAFE"},
+        {"name":"GetAgentStats",            "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "edge_03_string_concat_method.cs",     "category": "edge_case",
+      "total_methods": 5, "vulnerable": 3, "safe": 2,
+      "notes": "2 of 3 vuln methods use string.Concat() static method — EXPECTED FN. SearchAttendees is control.",
+      "methods": [
+        {"name":"SearchEvents",         "status":"VULNERABLE","type":"string_concat_method","edge":"EXPECTED_FN string.Concat()"},
+        {"name":"GetBookingsByOrganiser","status":"VULNERABLE","type":"string_concat_method","edge":"EXPECTED_FN string.Concat()"},
+        {"name":"SearchAttendees",      "status":"VULNERABLE","type":"string_concat","inject_params":["lastName","email","eventId"]},
+        {"name":"GetEventById",         "status":"SAFE"},
+        {"name":"CreateBooking",        "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "edge_04_large_schema.cs",             "category": "edge_case",
+      "total_methods": 5, "vulnerable": 3, "safe": 2,
+      "notes": "12 tables total. Tests UNION NULL padding accuracy with large column counts.",
+      "methods": [
+        {"name":"SearchClinicalRecords",  "status":"VULNERABLE","type":"string_concat",   "inject_params":["patientName","diagnosisCode","wardName"]},
+        {"name":"GetActivePrescriptions", "status":"VULNERABLE","type":"interpolated_sql","inject_params":["patientId","prescriptionStatus","drugClass"]},
+        {"name":"GetSurgicalHistory",     "status":"SAFE"},
+        {"name":"GetHospitalAuditReport", "status":"VULNERABLE","type":"string_format",   "inject_params":["hospitalCode","startDate","endDate","departmentName"]},
+        {"name":"GetLabResults",          "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "edge_05_alias_confusion.cs",          "category": "edge_case",
+      "total_methods": 5, "vulnerable": 2, "safe": 3,
+      "notes": "C# var named 'q' used + method param named 'Orders' same as SQL table.",
+      "methods": [
+        {"name":"TrackShipment",     "status":"VULNERABLE","type":"string_concat","inject_params":["q","status"]},
+        {"name":"GetCourierSchedule","status":"SAFE"},
+        {"name":"GetOrderStatus",    "status":"VULNERABLE","type":"string_concat","inject_params":["Orders","depot","dateFrom"]},
+        {"name":"GetDepotPerformance","status":"SAFE"},
+        {"name":"AssignVehicle",     "status":"SAFE"}
+      ]
+    },
+    {
+      "file": "edge_06_partial_stringbuilder.cs",    "category": "edge_case",
+      "total_methods": 5, "vulnerable": 3, "safe": 2,
+      "notes": "Mix of standard concat (found), StringBuilder (missed), and interpolation (found).",
+      "methods": [
+        {"name":"SearchSubscriptions",     "status":"VULNERABLE","type":"string_concat",   "inject_params":["customerName","planType","status"]},
+        {"name":"GetUsageReport_Builder",  "status":"VULNERABLE","type":"stringbuilder_concat","edge":"EXPECTED_FN tool blind spot"},
+        {"name":"GetAvailablePlans",       "status":"SAFE"},
+        {"name":"GetInvoicesByStatus",     "status":"VULNERABLE","type":"interpolated_sql","inject_params":["customerId","invoiceStatus","month"]},
+        {"name":"GetSupportTickets",       "status":"SAFE"}
+      ]
+    }
+  ],
+  "corpus_summary": {
+    "total_methods": 92,
+    "truly_vulnerable": 52,
+    "truly_safe": 40,
+    "expected_fps": 1,
+    "expected_fns_stringbuilder": 5,
+    "expected_fns_string_concat_method": 2
+  }
+}
